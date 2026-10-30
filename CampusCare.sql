@@ -82,3 +82,14 @@ SELECT
     created_at
 FROM complaints;
 
+SELECT
+    complaints.complaint_id,
+    students.email,
+    complaints.category,
+    complaints.title,
+    complaints.description
+FROM complaints
+JOIN students
+ON complaints.student_id = students.id
+ORDER BY complaints.created_at DESC;
+

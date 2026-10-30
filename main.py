@@ -628,25 +628,116 @@ def student_dashboard(email):
 
 # ---------------- ADMIN DASHBOARD ----------------
 
+
 def admin_dashboard():
     clear_page()
-    heading("Admin Dashboard", "CampusCare Administration")
 
-    ttk.Label(
-        container,
-        text="Welcome, Administrator!"
-    ).pack(pady=20)
+    heading("Admin Dashboard", "All Submitted Complaints")
 
-    ttk.Label(
-        container,
-        text="Complaint management will be added in later steps."
-    ).pack(pady=5)
+    # Table frame
+    table_frame = ttk.Frame(container)
+    table_frame.pack(fill="both", expand=True, pady=10)
 
+    # Table columns
+    columns = (
+        "complaint_id",
+        "email",
+        "category",
+        "title",
+        "description"
+    )
+
+    complaint_table = ttk.Treeview(
+        table_frame,
+        columns=columns,
+        show="headings",
+        height=15
+    )
+
+    # Column headings
+    complaint_table.heading("complaint_id", text="Complaint ID")
+    complaint_table.heading("email", text="Student Email")
+    complaint_table.heading("category", text="Category")
+    complaint_table.heading("title", text="Title")
+    complaint_table.heading("description", text="Description")
+
+    # Column widths
+    complaint_table.column("complaint_id", width=130)
+    complaint_table.column("email", width=180)
+    complaint_table.column("category", width=160)
+    complaint_table.column("title", width=150)
+    complaint_table.column("description", width=250)
+
+    # Scrollbar
+    scrollbar = ttk.Scrollbar(
+        table_frame,
+        orient="vertical",
+        command=complaint_table.yview
+    )
+
+    complaint_table.configure(
+        yscrollcommand=scrollbar.set
+    )
+
+    complaint_table.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # Fetch complaints from MySQL
+    connection = None
+    cursor = None
+
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT
+                complaints.complaint_id,
+                students.email,
+                complaints.category,
+                complaints.title,
+                complaints.description
+            FROM complaints
+            INNER JOIN students
+            ON complaints.student_id = students.id
+            ORDER BY complaints.created_at DESC
+        """)
+
+        complaints = cursor.fetchall()
+
+        # Display complaints in table
+        for complaint in complaints:
+            complaint_table.insert(
+                "",
+                "end",
+                values=complaint
+            )
+
+        if not complaints:
+            messagebox.showinfo(
+                "No Complaints",
+                "No complaints have been submitted yet."
+            )
+
+    except mysql.connector.Error as error:
+        messagebox.showerror(
+            "Database Error",
+            str(error)
+        )
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+
+        if connection is not None and connection.is_connected():
+            connection.close()
+
+    # Logout button
     ttk.Button(
         container,
         text="Logout",
         command=home_page
-    ).pack(pady=20)
+    ).pack(pady=15)
 
 # ---------------- START APPLICATION ----------------
 
